@@ -1,0 +1,105 @@
+﻿@using FinanceiroPessoal.Apresentacao.Pages.Componentes
+@using FinanceiroPessoal.Apresentacao.Shared
+@using FinanceiroPessoal.Apresentacao.ViewModels
+@using FinanceiroPessoal.Aplicacao.DTOs
+@using FinanceiroPessoal.Dominio.Enums
+@using MudBlazor
+@inject ISnackbar Snackbar
+@inherits BaseModal<DespesaViewModel>
+
+<MudDialog>
+    <DialogContent>
+        <MudText Typo="Typo.h6">@Titulo</MudText>
+
+        <MudTextField T="string" @bind-Value="Despesa.Descricao" Label="Descrição" Required="true" />
+        <MudNumericField T="decimal" @bind-Value="Despesa.Valor" Label="Valor" Required="true" Min="0" />
+        <MudDatePicker @bind-Date="Despesa.Data" Label="Data" Required="true" />
+
+        <MudSelect T="string" @bind-Value="Despesa.CategoriaId" Label="Categoria" Required="true">
+            @foreach (var cat in Categorias.Where(c => c.Tipo == TipoCategoria.Despesa))
+            {
+                <MudSelectItem Value="@cat.Id">@cat.Nome</MudSelectItem>
+            }
+        </MudSelect>
+
+        <ErroValidacao ViewModel="ViewModel" />
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton Color="Color.Secondary" OnClick="Cancelar" Variant="Variant.Outlined">Cancelar</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Salvar" Variant="Variant.Filled">Salvar</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public DespesaDto Despesa { get; set; } = new();
+    [Parameter] public List<CategoriaDto> Categorias { get; set; } = new();
+
+    private string Titulo => string.IsNullOrEmpty(Despesa.Id) ? "Adicionar Despesa" : "Editar Despesa";
+
+    protected override void OnParametersSet()
+    {
+        ViewModel.LimparMensagens();
+        ViewModel.LimparTodosErros();
+    }
+
+    private async Task Salvar()
+    {
+        if (string.IsNullOrWhiteSpace(Despesa.Descricao))
+        {
+            Snackbar.Add("A descrição é obrigatória.", Severity.Warning);
+            return;
+        }
+
+        if (Despesa.Valor <= 0)
+        {
+            Snackbar.Add("O valor deve ser maior que zero.", Severity.Warning);
+            return;
+        }
+
+        if (string.IsNullOrEmpty(Despesa.CategoriaId))
+        {
+            Snackbar.Add("A categoria é obrigatória.", Severity.Warning);
+            return;
+        }
+
+        if (string.IsNullOrEmpty(Despesa.Id))
+        {
+            await ViewModel.AdicionarDespesaAsync(new CriarDespesaDto
+            {
+                Valor = Despesa.Valor,
+                Data = Despesa.Data,
+                CategoriaId = Despesa.CategoriaId,
+                Descricao = Despesa.Descricao
+            });
+        }
+        else
+        {
+            await ViewModel.AtualizarDespesaAsync(Despesa.Id, new AtualizarDespesaDto
+            {
+                Id = Despesa.Id,
+                Valor = Despesa.Valor,
+                Data = Despesa.Data,
+                CategoriaId = Despesa.CategoriaId,
+                Descricao = Despesa.Descricao
+            });
+        }
+
+        if (!string.IsNullOrEmpty(ViewModel.MensagemSucesso))
+        {
+            Snackbar.Add(ViewModel.MensagemSucesso, Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        else if (!string.IsNullOrEmpty(ViewModel.MensagemErro))
+        {
+            Snackbar.Add(ViewModel.MensagemErro, Severity.Error);
+        }
+        else
+        {
+            Snackbar.Add("Erro ao salvar despesa.", Severity.Error);
+        }
+    }
+
+    private void Cancelar() => MudDialog.Cancel();
+}

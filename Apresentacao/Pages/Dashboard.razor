@@ -1,0 +1,205 @@
+﻿@page "/"
+@using FinanceiroPessoal.Apresentacao.Pages.Modals
+@using FinanceiroPessoal.Apresentacao.ViewModels
+@inject DashboardViewModel VM
+@inject ISnackbar Snackbar
+
+<MudText Typo="Typo.h4" GutterBottom="true" Class="mb-4">Dashboard Financeiro</MudText>
+
+<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-4">
+    <MudSelect @bind-Value="VM.PeriodoSelecionado" Label="Período" Dense="true">
+        <MudSelectItem Value="DashboardViewModel.PeriodoFiltro.Dia">Dia</MudSelectItem>
+        <MudSelectItem Value="DashboardViewModel.PeriodoFiltro.Semana">Semana</MudSelectItem>
+        <MudSelectItem Value="DashboardViewModel.PeriodoFiltro.Mes">Mês</MudSelectItem>
+        <MudSelectItem Value="DashboardViewModel.PeriodoFiltro.Ano">Ano</MudSelectItem>
+        <MudSelectItem Value="DashboardViewModel.PeriodoFiltro.Personalizado">Personalizado</MudSelectItem>
+    </MudSelect>
+
+    @if (VM.PeriodoSelecionado == DashboardViewModel.PeriodoFiltro.Personalizado)
+    {
+        <MudStack Row="true" Spacing="2">
+            <MudDatePicker @bind-Date="VM.PeriodoPersonalizado.Start" Label="Início" />
+            <MudDatePicker @bind-Date="VM.PeriodoPersonalizado.End" Label="Fim" />
+        </MudStack>
+    }
+</MudStack>
+
+<!-- Totais principais -->
+<MudGrid Spacing="3" Class="mb-4">
+    <MudItem xs="12" sm="4">
+        <MudCard Class="dashboard-card hover-card" Style="background-color:#E8F5E9;">
+            <MudCardContent Class="d-flex align-items-center">
+                <MudIcon Icon="@Icons.Material.Filled.AttachMoney" Color="Color.Success" Size="Size.Large" Class="mr-3" />
+                <div>
+                    <MudText Typo="Typo.subtitle1" Color="Color.Secondary">Receitas do Mês</MudText>
+                    <MudText Typo="Typo.h5" Color="Color.Success">@VM.TotalReceitasMensal.ToString("C")</MudText>
+                </div>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="12" sm="4">
+        <MudCard Class="dashboard-card hover-card" Style="background-color:#FFEBEE;">
+            <MudCardContent Class="d-flex align-items-center">
+                <MudIcon Icon="@Icons.Material.Filled.MoneyOff" Color="Color.Error" Size="Size.Large" Class="mr-3" />
+                <div>
+                    <MudText Typo="Typo.subtitle1" Color="Color.Secondary">Despesas do Mês</MudText>
+                    <MudText Typo="Typo.h5" Color="Color.Error">@VM.TotalDespesasMensal.ToString("C")</MudText>
+                </div>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="12" sm="4">
+        <MudCard Class="dashboard-card hover-card" Style="background-color:#E3F2FD;">
+            <MudCardContent Class="d-flex align-items-center">
+                <MudIcon Icon="@Icons.Material.Filled.AccountBalanceWallet" Color="Color.Primary" Size="Size.Large" Class="mr-3" />
+                <div>
+                    <MudText Typo="Typo.subtitle1" Color="Color.Secondary">Saldo Atual</MudText>
+                    <MudText Typo="Typo.h5">@VM.SaldoAtual.ToString("C")</MudText>
+                </div>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+</MudGrid>
+
+<!-- Gráficos -->
+<MudGrid Spacing="6" Class="mb-4">
+    <MudItem xs="12" sm="6">
+        <MudCard Class="dashboard-card" Style="border-radius:12px;">
+            <MudCardContent>
+                <MudText Typo="Typo.subtitle1" Class="mb-2" Style="font-weight:bold;">
+                    Receitas por Categoria
+                </MudText>
+
+                <MudChart ChartType="ChartType.Pie"
+                          InputData="@ReceitasData"
+                          InputLabels="@ReceitasLabels"
+                          Colors="@VM.ReceitasColors"
+                          Height="300px"
+                          Width="100%" />
+
+                <MudGrid Class="mt-2">
+                    <MudItem xs="6">
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                                   OnClick="@(() => AbrirModalDetalhes(true))">
+                            Ver receitas
+                        </MudButton>
+                    </MudItem>
+                </MudGrid>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="12" sm="6">
+        <MudCard Class="dashboard-card" Style="border-radius:12px;">
+            <MudCardContent>
+                <MudText Typo="Typo.subtitle1" Class="mb-2" Style="font-weight:bold;">
+                    Despesas por Categoria
+                </MudText>
+
+                <MudChart ChartType="ChartType.Pie"
+                          InputData="@DespesasData"
+                          InputLabels="@DespesasLabels"
+                          Colors="@VM.DespesasColors"
+                          Height="300px"
+                          Width="100%" />
+
+                <MudGrid Class="mt-2">
+                    <MudItem xs="6">
+                        <MudButton Variant="Variant.Filled" Color="Color.Error"
+                                   OnClick="@(() => AbrirModalDetalhes(false))">
+                            Ver despesas
+                        </MudButton>
+                    </MudItem>
+                </MudGrid>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+</MudGrid>
+
+<!-- Últimas Receitas -->
+<MudCard Class="dashboard-card mb-4 hover-card" Style="background-color:#F1F8E9;">
+    <MudCardContent>
+        <MudText Typo="Typo.subtitle1" Class="mb-2" Style="font-weight:bold;">
+            Últimas Receitas
+        </MudText>
+        <MudTable Items="@VM.UltimasReceitas" Dense="true" Hover="true" Striped="true">
+            <HeaderContent>
+                <MudTh Style="width:50%">Descrição</MudTh>
+                <MudTh Style="width:25%">Valor</MudTh>
+                <MudTh Style="width:25%">Data</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd Style="width:50%">@context.Descricao</MudTd>
+                <MudTd Style="width:25%">@context.Valor.ToString("C")</MudTd>
+                <MudTd Style="width:25%">@context.Data</MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudCardContent>
+</MudCard>
+
+<!-- Últimas Despesas -->
+<MudCard Class="dashboard-card hover-card" Style="background-color:#FFF3E0;">
+    <MudCardContent>
+        <MudText Typo="Typo.subtitle1" Class="mb-2" Style="font-weight:bold;">
+            Últimas Despesas
+        </MudText>
+        <MudTable Items="@VM.UltimasDespesas" Dense="true" Hover="true" Striped="true">
+            <HeaderContent>
+                <MudTh Style="width:50%">Descrição</MudTh>
+                <MudTh Style="width:25%">Valor</MudTh>
+                <MudTh Style="width:25%">Data</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd Style="width:50%">@context.Descricao</MudTd>
+                <MudTd Style="width:25%">@context.Valor.ToString("C")</MudTd>
+                <MudTd Style="width:25%">@context.Data</MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudCardContent>
+</MudCard>
+
+@code {
+    private double[] DespesasData = Array.Empty<double>();
+    private string[] DespesasLabels = Array.Empty<string>();
+    private string[] DespesasColors = new string[] { "#F44336", "#FF9800", "#FFEB3B", "#E91E63", "#9C27B0", "#673AB7" };
+
+    private double[] ReceitasData = Array.Empty<double>();
+    private string[] ReceitasLabels = Array.Empty<string>();
+    private string[] ReceitasColors = new string[] { "#4CAF50", "#2196F3", "#00BCD4", "#8BC34A", "#CDDC39", "#FFC107" };
+
+    [Inject] private IDialogService DialogService { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        VM.OnSnackbar += (mensagem, severity) =>
+        {
+            InvokeAsync(() => Snackbar.Add(mensagem, severity));
+        };
+
+        await VM.CarregarDadosAsync();
+
+        // Converte ObservableCollection para array
+        DespesasData = VM.DespesasData.ToArray();
+        DespesasLabels = VM.DespesasLabels.ToArray();
+
+        ReceitasData = VM.ReceitasData.ToArray();
+        ReceitasLabels = VM.ReceitasLabels.ToArray();
+
+        StateHasChanged();
+    }
+
+    private async Task AbrirModalDetalhes(bool receitas)
+    {
+        var lancamentos = await VM.ObterLancamentosAsync(receitas);
+
+        var parameters = new DialogParameters
+        {
+            ["Lancamentos"] = lancamentos,
+            ["Titulo"] = receitas ? "Detalhes das Receitas" : "Detalhes das Despesas"
+        };
+
+        await DialogService.ShowAsync<LancamentosModal>("", parameters);
+    }
+}

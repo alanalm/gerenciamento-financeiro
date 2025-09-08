@@ -1,0 +1,41 @@
+﻿@using MudBlazor
+
+<MudCard Class="dashboard-card hover-card p-4">
+    <MudStack Row="true" AlignItems="AlignItems.Center" JustifyContent="space-between">
+        <MudStack>
+            <MudText Typo="Typo.subtitle2" Class="mb-1">@Title</MudText>
+            <MudText Typo="Typo.h6">@Value</MudText>
+            
+            @if (ShowTrend && !string.IsNullOrEmpty(TrendLabel))
+            {
+                <MudText Typo="Typo.caption"
+                         Class="d-flex align-items-center"
+                         Style="font-weight:500;"
+                         Color="@(TrendIsPositive.HasValue ? (TrendIsPositive.Value ? Color.Success : Color.Error) : Color.Default)">
+                    @TrendLabel: @TrendValue
+                </MudText>
+            }
+        </MudStack>
+
+        <MudIconButton Icon="@Icon" Color="Color.Primary" Size="Size.Large" />
+    </MudStack>
+</MudCard>
+
+@code {
+    [Parameter] public string Title { get; set; } = string.Empty;
+    [Parameter] public string Value { get; set; } = string.Empty;
+    [Parameter] public string Icon { get; set; } = Icons.Material.Filled.Info;
+
+    [Parameter] public bool ShowTrend { get; set; } = false;
+    [Parameter] public string TrendLabel { get; set; } = string.Empty;
+    [Parameter] public string TrendValue { get; set; } = string.Empty;
+
+    [Parameter] public bool? TrendIsPositive { get; set; } 
+    private string TrendStyle => $"font-weight:500; color:{ObterCorTrend()}";
+
+    private string ObterCorTrend()
+    {
+        if (!TrendIsPositive.HasValue) return "gray";
+        return TrendIsPositive.Value ? "green" : "red";
+    }
+}

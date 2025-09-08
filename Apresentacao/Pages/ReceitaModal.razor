@@ -1,0 +1,121 @@
+﻿@using FinanceiroPessoal.Apresentacao.Pages.Componentes
+@using FinanceiroPessoal.Apresentacao.Shared
+@using FinanceiroPessoal.Apresentacao.ViewModels
+@using FinanceiroPessoal.Aplicacao.DTOs
+@using FinanceiroPessoal.Dominio.Enums
+@using MudBlazor
+@inject ISnackbar Snackbar
+@inherits BaseModal<ReceitaViewModel>
+
+<MudDialog>
+    <DialogContent>
+        <MudText Typo="Typo.h6">@Titulo</MudText>
+
+        <MudTextField T="string" @bind-Value="Receita.Descricao" Label="Descrição" Required="true" />
+        <MudNumericField T="decimal" @bind-Value="Receita.Valor" Label="Valor" Required="true" Min="0" />
+        <MudDatePicker @bind-Date="Receita.Data" Label="Data" Required="true" />
+
+        <MudSelect T="string" @bind-Value="Receita.CategoriaId" Label="Categoria" Required="true">
+            @foreach (var cat in (Categorias ?? Enumerable.Empty<CategoriaDto>()).Where(c => c.Tipo == TipoCategoria.Receita))
+            {
+                <MudSelectItem Value="@cat.Id">@cat.Nome</MudSelectItem>
+            }
+        </MudSelect>
+
+        @* mostra erros do FluentValidation (se ViewModel foi passado) *@
+        @if (ViewModel is not null)
+        {
+            <ErroValidacao ViewModel="ViewModel" />
+        }
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton Color="Color.Secondary" OnClick="Cancelar" Variant="Variant.Outlined">Cancelar</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Salvar" Variant="Variant.Filled">Salvar</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public ReceitaDto Receita { get; set; } = new();
+    [Parameter] public List<CategoriaDto>? Categorias { get; set; }
+
+    private string Titulo => string.IsNullOrEmpty(Receita.Id) ? "Adicionar Receita" : "Editar Receita";
+
+    protected override void OnParametersSet()
+    {
+        // limpeza segura (só chama se ViewModel foi realmente passado)
+        ViewModel?.LimparMensagens();
+        ViewModel?.LimparTodosErros();
+
+        if (Receita.Data == default)
+            Receita.Data = DateTime.Today;
+    }
+
+    private async Task Salvar()
+    {
+        // validações rápidas de UI
+        if (string.IsNullOrWhiteSpace(Receita.Descricao))
+        {
+            Snackbar.Add("A descrição é obrigatória.", Severity.Warning);
+            return;
+        }
+
+        if (Receita.Valor <= 0)
+        {
+            Snackbar.Add("O valor deve ser maior que zero.", Severity.Warning);
+            return;
+        }
+
+        if (string.IsNullOrEmpty(Receita.CategoriaId))
+        {
+            Snackbar.Add("A categoria é obrigatória.", Severity.Warning);
+            return;
+        }
+
+        // se o ViewModel não foi passado, avisar e abortar (ou você pode injetar serviço aqui)
+        if (ViewModel is null)
+        {
+            Snackbar.Add("Erro interno: ViewModel não fornecido ao modal.", Severity.Error);
+            return;
+        }
+
+        if (string.IsNullOrEmpty(Receita.Id))
+        {
+            await ViewModel.AdicionarReceitaAsync(new CriarReceitaDto
+            {
+                Valor = Receita.Valor,
+                Data = Receita.Data,
+                CategoriaId = Receita.CategoriaId,
+                Descricao = Receita.Descricao
+            });
+        }
+        else
+        {
+            await ViewModel.AtualizarReceitaAsync(Receita.Id, new AtualizarReceitaDto
+            {
+                Id = Receita.Id,
+                Valor = Receita.Valor,
+                Data = Receita.Data,
+                CategoriaId = Receita.CategoriaId,
+                Descricao = Receita.Descricao
+            });
+        }
+
+        if (!string.IsNullOrEmpty(ViewModel.MensagemSucesso))
+        {
+            Snackbar.Add(ViewModel.MensagemSucesso, Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        else if (!string.IsNullOrEmpty(ViewModel.MensagemErro))
+        {
+            Snackbar.Add(ViewModel.MensagemErro, Severity.Error);
+        }
+        else
+        {
+            Snackbar.Add("Erro ao salvar receita.", Severity.Error);
+        }
+    }
+
+    private void Cancelar() => MudDialog.Cancel();
+}

@@ -1,0 +1,32 @@
+﻿@using MudBlazor
+@using System.Linq
+
+@if (Labels == null || Values == null || Labels.Length != Values.Length)
+{
+    <MudText Color="Color.Error">Dados inválidos. Labels e Values devem ter mesmo tamanho.</MudText>
+}
+else
+{
+    <MudPaper Class="pa-4" Elevation="1">
+        @if (!string.IsNullOrWhiteSpace(ChartTitle))
+        {
+            <div class="text-subtitle-1 mb-2">@ChartTitle</div>
+        }
+
+        <MudChart ChartType="ChartType.Bar"
+                  Labels="@Labels"
+                  Datasets="@ChartSeriesData" />
+    </MudPaper>
+}
+
+@code {
+    [Parameter] public string[]? Labels { get; set; }
+    [Parameter] public double[]? Values { get; set; }
+    [Parameter] public string? ChartTitle { get; set; }
+    [Parameter] public string[] Colors { get; set; } = Array.Empty<string>();
+
+    private ChartSeries[] ChartSeriesData => new[]
+   {
+        new ChartSeries { Name = "Valores", Data = Values ?? Array.Empty<double>() }
+    };
+}

@@ -1,0 +1,130 @@
+﻿@page "/categorias"
+@using FinanceiroPessoal.Aplicacao.DTOs
+@using FinanceiroPessoal.ViewModels
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@inject CategoriaViewModel ViewModel
+
+<PageTitle>Categorias</PageTitle>
+
+<MudText Typo="Typo.h4" GutterBottom="true">Gerenciar Categorias</MudText>
+
+<MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="AbrirModalAdicionar">
+    Adicionar Categoria
+</MudButton>
+
+<MudTextField Placeholder="Pesquisar..." Adornment="Adornment.Start"
+              AdornmentIcon="@Icons.Material.Filled.Search"
+              @bind-Value="filtro"
+              Immediate="true"
+              Class="mb-2" />
+
+<MudTable Items="CategoriasFiltradas" Dense="true" Hover="true">
+    <HeaderContent>
+        <MudTh>Nome</MudTh>
+        <MudTh>Descrição</MudTh>
+        <MudTh>Tipo</MudTh>
+        <MudTh></MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd>@context.Nome</MudTd>
+        <MudTd>@context.Descricao</MudTd>
+        <MudTd>@context.Tipo</MudTd>
+        <MudTd>
+            <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                           OnClick="@(() => AbrirModalEditar(context))"
+                           Color="Color.Primary" />
+            <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                           OnClick="@(() => RemoverAsync(context))"
+                           Color="Color.Error" />
+        </MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager />
+    </PagerContent>
+</MudTable>
+
+@code {
+    private string filtro = string.Empty;
+    private DialogOptions dialogOptions = new() { CloseButton = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+
+    private IEnumerable<CategoriaDto> CategoriasFiltradas =>
+        string.IsNullOrWhiteSpace(filtro)
+            ? ViewModel.Categorias
+            : ViewModel.Categorias.Where(c =>
+                c.Nome.Contains(filtro, StringComparison.OrdinalIgnoreCase) ||
+                (c.Descricao?.Contains(filtro, StringComparison.OrdinalIgnoreCase) ?? false));
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ViewModel.CarregarCategoriasAsync();
+    }
+
+    private async Task AbrirModalAdicionar()
+    {
+        var parametros = new DialogParameters
+        {
+            { "Categoria", new CategoriaDto() },
+            { "ViewModel", ViewModel }
+        };
+
+        var dialogRef = DialogService.Show<CategoriaModal>("Nova Categoria", parametros, dialogOptions);
+        var result = await dialogRef.Result;
+
+        if (!result.Canceled)
+            await ViewModel.CarregarCategoriasAsync();
+        ExibirMensagens();
+    }
+
+    private async Task AbrirModalEditar(CategoriaDto categoria)
+    {
+        var parametros = new DialogParameters
+        {
+            { "Categoria", new CategoriaDto
+                {
+                    Id = categoria.Id,
+                    Nome = categoria.Nome,
+                    Descricao = categoria.Descricao,
+                    Tipo = categoria.Tipo
+                }
+            },
+            { "ViewModel", ViewModel }
+        };
+
+        var dialogRef = DialogService.Show<CategoriaModal>("Editar Categoria", parametros, dialogOptions);
+        var result = await dialogRef.Result;
+
+        if (!result.Canceled)
+            await ViewModel.CarregarCategoriasAsync();
+        ExibirMensagens();
+    }
+
+    private async Task RemoverAsync(CategoriaDto categoria)
+    {
+        var parametros = new DialogParameters
+        {
+            ["Titulo"] = "Confirmação",
+            ["Mensagem"] = $"Deseja remover a despesa \"{categoria.Nome}\"?",
+            ["BotaoConfirmar"] = "Remover",
+            ["CorBotaoConfirmar"] = Color.Error
+        };
+
+        var dialog = DialogService.Show<DialogoConfirmacao>("Confirmação", parametros, dialogOptions);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            await ViewModel.RemoverCategoriaAsync(categoria.Id);
+            ExibirMensagens();
+        }
+    }
+
+    private void ExibirMensagens()
+    {
+        if (!string.IsNullOrEmpty(ViewModel.MensagemErro))
+            Snackbar.Add(ViewModel.MensagemErro, Severity.Error);
+
+        if (!string.IsNullOrEmpty(ViewModel.MensagemSucesso))
+            Snackbar.Add(ViewModel.MensagemSucesso, Severity.Success);
+    }
+}

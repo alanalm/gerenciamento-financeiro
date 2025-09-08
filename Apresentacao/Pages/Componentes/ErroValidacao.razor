@@ -1,0 +1,33 @@
+﻿@typeparam TViewModel where TViewModel : BaseViewModel
+@inherits ComponentBase
+@using FinanceiroPessoal.ViewModels
+@using MudBlazor
+
+@inject ISnackbar Snackbar
+
+@code {
+    [Parameter] public TViewModel ViewModel { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        if (ViewModel is not null && ViewModel.TemErros)
+        {
+            foreach (var prop in ViewModel.GetPropriedadesComErros())
+            {
+                foreach (var msg in ViewModel.GetErros(prop))
+                {
+                    Snackbar.Add(msg, Severity.Error, cfg =>
+                    {
+                        cfg.RequireInteraction = false; 
+                        cfg.VisibleStateDuration = 4000;
+                    });
+                }
+            }
+        }
+    }
+    protected override void OnInitialized()
+    {
+        if (ViewModel != null)
+            ViewModel.ErrosAtualizados += StateHasChanged;
+    }
+}

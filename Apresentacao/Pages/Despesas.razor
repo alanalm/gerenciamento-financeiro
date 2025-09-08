@@ -1,0 +1,156 @@
+﻿@page "/despesas"
+@using FinanceiroPessoal.Aplicacao.DTOs
+@using FinanceiroPessoal.Apresentacao.ViewModels
+@using FinanceiroPessoal.ViewModels
+@inject DespesaViewModel DespesaVM
+@inject CategoriaViewModel CategoriaVM
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<PageTitle>Despesas</PageTitle>
+
+<MudText Typo="Typo.h4" GutterBottom="true">Gerenciar Despesas</MudText>
+
+<MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => AbrirModalAdicionar())">
+    Adicionar Despesa
+</MudButton>
+
+<MudTextField @bind-Value="Filtro"
+              Placeholder="Buscar..."
+              Adornment="Adornment.Start"
+              AdornmentIcon="@Icons.Material.Filled.Search"
+              Immediate="true"
+              Margin="Margin.Dense" />
+
+<MudTable Items="@DespesasFiltradas" Dense="true" Hover="true" Bordered="true" Striped="true">
+    <HeaderContent>
+        <MudTh>Descrição</MudTh>
+        <MudTh>Valor</MudTh>
+        <MudTh>Data</MudTh>
+        <MudTh>Categoria</MudTh>
+        <MudTh></MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd>@context.Descricao</MudTd>
+        <MudTd>@context.Valor.ToString("C")</MudTd>
+        <MudTd>@context.Data</MudTd>
+        <MudTd>@CategoriaVM.Categorias.FirstOrDefault(c => c.Id == context.CategoriaId)?.Nome</MudTd>
+        <MudTd>
+            <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                           OnClick="@(() => AbrirModalEditar(context))"
+                           Color="Color.Primary" />
+            <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                           OnClick="@(() => RemoverDespesa(context))"
+                           Color="Color.Error" />
+        </MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager />
+    </PagerContent>
+</MudTable>
+
+@code {
+    public string Filtro { get; set; } = string.Empty;
+    private DialogOptions dialogOptions = new() { CloseButton = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+
+    public IEnumerable<DespesaDto> DespesasFiltradas =>
+        string.IsNullOrWhiteSpace(Filtro)
+            ? DespesaVM.Despesas
+            : DespesaVM.Despesas.Where(d =>
+                (d.Descricao?.Contains(Filtro, StringComparison.OrdinalIgnoreCase) ?? false)
+                || (d.Valor.ToString("C").Contains(Filtro, StringComparison.OrdinalIgnoreCase))
+                 || (d.Data?.ToShortDateString().Contains(Filtro) ?? false)
+            );
+    protected override async Task OnInitializedAsync()
+    {
+        await CategoriaVM.CarregarCategoriasAsync();
+        await DespesaVM.CarregarDespesasAsync();
+        ExibirMensagens();
+    }
+
+    private async Task AbrirModalAdicionar()
+    {
+        var parametros = new DialogParameters
+        {
+            ["Despesa"] = new DespesaDto { Data = DateTime.Now },
+            ["Categorias"] = CategoriaVM.Categorias.Where(c => c.Tipo == Dominio.Enums.TipoCategoria.Despesa).ToList(),
+            ["ViewModel"] = DespesaVM
+        };
+
+        var dialog = DialogService.Show<DespesaModal>("Adicionar Despesa", parametros, dialogOptions);
+        var result = await dialog.Result;
+
+        if (!result.Canceled && result.Data is DespesaDto nova)
+        {
+            await DespesaVM.AdicionarDespesaAsync(new CriarDespesaDto
+            {
+                Descricao = nova.Descricao,
+                Valor = nova.Valor,
+                Data = nova.Data,
+                CategoriaId = nova.CategoriaId
+            });
+            ExibirMensagens();
+        }
+    }
+
+    private async Task AbrirModalEditar(DespesaDto despesa)
+    {
+        var parametros = new DialogParameters
+        {
+            ["Despesa"] = new DespesaDto
+            {
+                Id = despesa.Id,
+                Descricao = despesa.Descricao,
+                Valor = despesa.Valor,
+                Data = despesa.Data,
+                CategoriaId = despesa.CategoriaId
+            },
+            ["Categorias"] = CategoriaVM.Categorias.Where(c => c.Tipo == Dominio.Enums.TipoCategoria.Despesa).ToList(),
+            ["ViewModel"] = DespesaVM
+        };
+
+        var dialog = DialogService.Show<DespesaModal>("Editar Despesa", parametros, dialogOptions);
+        var result = await dialog.Result;
+
+        if (!result.Canceled && result.Data is DespesaDto editada)
+        {
+            await DespesaVM.AtualizarDespesaAsync(editada.Id, new AtualizarDespesaDto
+            {
+                Descricao = editada.Descricao,
+                Valor = editada.Valor,
+                Data = editada.Data,
+                CategoriaId = editada.CategoriaId
+            });
+            ExibirMensagens();
+        }
+    }
+
+    private async Task RemoverDespesa(DespesaDto despesa)
+    {
+        var parametros = new DialogParameters
+        {
+            ["Titulo"] = "Confirmação",
+            ["Mensagem"] = $"Deseja remover a despesa \"{despesa.Descricao}\"?",
+            ["BotaoConfirmar"] = "Remover",
+            ["CorBotaoConfirmar"] = Color.Error
+        };
+
+        var dialog = DialogService.Show<DialogoConfirmacao>("Confirmação", parametros, dialogOptions);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            await DespesaVM.RemoverDespesaAsync(despesa.Id);
+            ExibirMensagens();
+        }
+    }
+
+    private void ExibirMensagens()
+    {
+        if (!string.IsNullOrEmpty(DespesaVM.MensagemErro))
+            Snackbar.Add(DespesaVM.MensagemErro, Severity.Error);
+
+        if (!string.IsNullOrEmpty(DespesaVM.MensagemSucesso))
+            Snackbar.Add(DespesaVM.MensagemSucesso, Severity.Success);
+    }
+}
