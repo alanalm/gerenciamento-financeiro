@@ -16,10 +16,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Apresentacao\FinanceiroPessoal.Apresentacao.csproj" />
-    <ProjectReference Include="..\Dominio\FinanceiroPessoal.Dominio.csproj" />
     <ProjectReference Include="..\FinanceiroPessoal.API\FinanceiroPessoal.API.csproj" />
     <ProjectReference Include="..\FinanceiroPessoal.Aplicacao\FinanceiroPessoal.Aplicacao.csproj" />
+    <ProjectReference Include="..\FinanceiroPessoal.Apresentacao\FinanceiroPessoal.Apresentacao.csproj" />
+    <ProjectReference Include="..\FinanceiroPessoal.Dominio\FinanceiroPessoal.Dominio.csproj" />
     <ProjectReference Include="..\FinanceiroPessoal.Infraestrutura\FinanceiroPessoal.Infraestrutura.csproj" />
   </ItemGroup>
 
