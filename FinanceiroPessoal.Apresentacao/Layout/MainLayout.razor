@@ -1,35 +1,85 @@
-﻿@inherits LayoutComponentBase
+﻿@using FinanceiroPessoal.Apresentacao.Servicos.Interfaces
+@using Microsoft.AspNetCore.Components.Authorization
+@using Blazored.LocalStorage
+@inherits LayoutComponentBase
 @inject ISnackbar Snackbar
 @inject IJSRuntime JSRuntime
+@inject IAuthService Auth
+@inject NavigationManager Nav
+@inject ILocalStorageService LocalStorage
 
-<MudThemeProvider />
-<MudPopoverProvider />
+<CascadingAuthenticationState>
+    <MudThemeProvider />
+    <MudPopoverProvider />
 
-<MudLayout>
-    <MudAppBar Elevation="1">
-        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
-        <MudSpacer />
-        <MudText Typo="Typo.h5" Class="ml-4">Financeiro Pessoal</MudText>
-        <MudSpacer />
-    </MudAppBar>
-    <MudDrawer @bind-Open="_drawerOpen" Elevation="1">
-        <MudDrawerHeader>
-            <MudText Typo="Typo.h6">Navegação</MudText>
-        </MudDrawerHeader>
-        <NavMenu />
-    </MudDrawer>
-    <MudMainContent>
-        <MudContainer MaxWidth="MaxWidth.Large" Class="my-16 pt-16">
-            @Body
-        </MudContainer>
-    </MudMainContent>
-</MudLayout>
+    <MudLayout>
+        <MudAppBar Elevation="1">
+            <MudIconButton Icon="@Icons.Material.Filled.Menu" 
+                           Color="Color.Inherit" 
+                           Edge="Edge.Start" 
+                           OnClick="@((e) => DrawerToggle())" />
+            <MudSpacer />
+            <MudText Typo="Typo.h5" Class="ml-4">Financeiro Pessoal</MudText>
+            <MudSpacer />
+
+            @if (IsAuthenticated)
+            {
+                <MudText Typo="Typo.subtitle2" Class="mr-2">Olá, @NomeUsuario!</MudText>
+                <MudButton Color="Color.Error" Variant="Variant.Outlined" OnClick="Logout">
+                    Sair
+                </MudButton>
+            }
+
+        </MudAppBar>
+
+        <MudDrawer @bind-Open="_drawerOpen" Elevation="1">
+            <MudDrawerHeader>
+                <MudText Typo="Typo.h6">Navegação</MudText>
+            </MudDrawerHeader>
+            <NavMenu />
+        </MudDrawer>
+
+        <MudMainContent>
+            <MudContainer MaxWidth="MaxWidth.Large" Class="my-16 pt-16">
+                @Body
+            </MudContainer>
+        </MudMainContent>
+    </MudLayout>
+</CascadingAuthenticationState>
 
 @code {
     bool _drawerOpen = true;
+    bool IsAuthenticated = false;
+    private string? NomeUsuario;
+
+    [CascadingParameter] 
+    private Task<AuthenticationState> AuthStateTask { get; set; } = default!;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var authState = await AuthStateTask;
+        var user = authState.User;
+
+        IsAuthenticated = user.Identity?.IsAuthenticated ?? false;
+
+        if (IsAuthenticated)
+        {
+            // Pega direto da claim padrão "name" do JWT
+            NomeUsuario = user.Identity?.Name
+                          ?? user.FindFirst("name")?.Value
+                          ?? user.FindFirst("unique_name")?.Value;
+        }
+    }
 
     void DrawerToggle()
     {
         _drawerOpen = !_drawerOpen;
+    }
+
+    private async Task Logout()
+    {
+        await Auth.LogoutAsync();
+        Snackbar.Add("Você saiu com sucesso!", Severity.Info);
+        Nav.NavigateTo("/login", true);
     }
 }

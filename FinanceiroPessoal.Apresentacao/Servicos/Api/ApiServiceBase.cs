@@ -1,9 +1,9 @@
 ﻿using FinanceiroPessoal.Dominio.Comum;
-using System.Net.Http;
+using System.Net.Http.Headers;
+using Blazored.LocalStorage;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 
 namespace FinanceiroPessoal.Servicos.Api
 {
@@ -11,10 +11,12 @@ namespace FinanceiroPessoal.Servicos.Api
     {
         protected readonly HttpClient _httpClient;
         private readonly JsonSerializerOptions _jsonOptions;
+        private readonly ILocalStorageService _localStorage;
 
-        protected ApiServiceBase(HttpClient httpClient)
+        protected ApiServiceBase(HttpClient httpClient, ILocalStorageService localStorage)
         {
             _httpClient = httpClient;
+            _localStorage = localStorage;
 
             // Configuração padrão de serialização/deserialização
             _jsonOptions = new JsonSerializerOptions
@@ -29,6 +31,7 @@ namespace FinanceiroPessoal.Servicos.Api
 
         protected async Task<RespostaApi<T>> GetAsync<T>(string url)
         {
+            await AdicionarTokenAsync();
             try
             {
                 var response = await _httpClient.GetAsync(url);
@@ -42,6 +45,7 @@ namespace FinanceiroPessoal.Servicos.Api
 
         protected async Task<RespostaApi<T>> PostAsync<T>(string url, object dados)
         {
+            await AdicionarTokenAsync();
             try
             {
                 var content = new StringContent(
@@ -61,6 +65,7 @@ namespace FinanceiroPessoal.Servicos.Api
 
         protected async Task<RespostaApi<T>> PutAsync<T>(string url, object dados)
         {
+            await AdicionarTokenAsync();
             try
             {
                 var content = new StringContent(
@@ -80,6 +85,7 @@ namespace FinanceiroPessoal.Servicos.Api
 
         protected async Task<RespostaApi<bool>> DeleteAsync(string url)
         {
+            await AdicionarTokenAsync();
             try
             {
                 var response = await _httpClient.DeleteAsync(url);
@@ -116,6 +122,26 @@ namespace FinanceiroPessoal.Servicos.Api
 
             var mensagemErro = await response.Content.ReadAsStringAsync();
             return RespostaApi<T>.ErroResposta($"Erro da API: {mensagemErro}");
+        }
+
+        #endregion
+
+        #region Token
+
+        private async Task AdicionarTokenAsync()
+        {
+            var token = await _localStorage.GetItemAsStringAsync("authToken");
+
+            if (!string.IsNullOrEmpty(token))
+            {
+                // evita duplicar o header
+                if (_httpClient.DefaultRequestHeaders.Authorization == null ||
+                    _httpClient.DefaultRequestHeaders.Authorization.Parameter != token)
+                {
+                    _httpClient.DefaultRequestHeaders.Authorization =
+                        new AuthenticationHeaderValue("Bearer", token);
+                }
+            }
         }
 
         #endregion

@@ -2,24 +2,34 @@
 using FinanceiroPessoal.Aplicacao.Interfaces;
 using FinanceiroPessoal.Aplicacao.Servicos;
 using FinanceiroPessoal.Dominio.Comum;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace FinanceiroPessoal.API.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class ReceitasController : ControllerBase
     {
         private readonly IReceitaServico _receitaServico;
-        private readonly Guid usuarioTeste = Guid.Parse("11111111-1111-1111-1111-111111111111");
 
         public ReceitasController(IReceitaServico receitaServico)
         {
             _receitaServico = receitaServico;
         }
 
-        // Simulação de UsuarioId, em um cenário real vai vir do JWT
-        private Guid GetUsuarioId() => usuarioTeste;
+        // Obtém o ID do usuário autenticado a partir dos claims
+        private Guid GetUsuarioId()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim))
+                throw new UnauthorizedAccessException("Usuário não autenticado ou claim de identificação ausente.");
+
+            return Guid.Parse(userIdClaim);
+        }
 
         [HttpPost]
         public async Task<ActionResult<RespostaApi<ReceitaDto>>> Post([FromBody] CriarReceitaDto receitaDto)

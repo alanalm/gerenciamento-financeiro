@@ -2,13 +2,18 @@
 @using FinanceiroPessoal.Aplicacao.DTOs
 @using FinanceiroPessoal.Apresentacao.ViewModels
 @using FinanceiroPessoal.ViewModels
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
 @inject ReceitaViewModel ReceitaVM
 @inject CategoriaViewModel CategoriaVM
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
+@attribute [Authorize]
 
 <PageTitle>Receitas</PageTitle>
 
+<AuthorizeView>
+    <Authorized>
 <MudText Typo="Typo.h4" GutterBottom="true">Gerenciar Receitas</MudText>
 
 <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => AbrirModalAdicionar())">
@@ -30,17 +35,17 @@
         <MudTh>Categoria</MudTh>
         <MudTh></MudTh>
     </HeaderContent>
-    <RowTemplate>
-        <MudTd>@context.Descricao</MudTd>
-        <MudTd>@context.Valor.ToString("C")</MudTd>
-        <MudTd>@context.Data</MudTd>
-        <MudTd>@CategoriaVM.Categorias.FirstOrDefault(c => c.Id == context.CategoriaId)?.Nome</MudTd>
+    <RowTemplate Context="receitas">
+                <MudTd>@receitas.Descricao</MudTd>
+                <MudTd>@receitas.Valor.ToString("C")</MudTd>
+                <MudTd>@receitas.Data</MudTd>
+                <MudTd>@CategoriaVM.Categorias.FirstOrDefault(c => c.Id == receitas.CategoriaId)?.Nome</MudTd>
         <MudTd>
             <MudIconButton Icon="@Icons.Material.Filled.Edit"
-                           OnClick="@(() => AbrirModalEditar(context))"
+                                   OnClick="@(() => AbrirModalEditar(receitas))"
                            Color="Color.Primary" />
             <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                           OnClick="@(() => RemoverReceita(context))"
+                                   OnClick="@(() => RemoverReceita(receitas))"
                            Color="Color.Error" />
         </MudTd>
     </RowTemplate>
@@ -48,6 +53,11 @@
         <MudTablePager />
     </PagerContent>
 </MudTable>
+</Authorized>
+     <NotAuthorized>
+        <MudText Typo="Typo.h6" Color="Color.Error">Você não tem permissão para acessar esta página.</MudText>
+    </NotAuthorized>
+</AuthorizeView>
 
 @code {
 

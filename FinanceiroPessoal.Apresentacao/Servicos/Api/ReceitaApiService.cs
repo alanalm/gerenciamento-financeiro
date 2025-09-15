@@ -7,9 +7,10 @@ namespace FinanceiroPessoal.Apresentacao.Servicos.Api
 {
     public class ReceitaApiService : ApiServiceBase, IReceitaApiService
     {
-        private const string BaseUrl = "api/receitas";
+        private const string BaseUrl = "receitas";
 
-        public ReceitaApiService(HttpClient httpClient) : base(httpClient) { }
+        public ReceitaApiService(HttpClient httpClient, Blazored.LocalStorage.ILocalStorageService localStorage) 
+            : base(httpClient, localStorage) { }
 
         public Task<RespostaApi<IEnumerable<ReceitaDto>>> ObterTodosAsync()
             => GetAsync<IEnumerable<ReceitaDto>>(BaseUrl);

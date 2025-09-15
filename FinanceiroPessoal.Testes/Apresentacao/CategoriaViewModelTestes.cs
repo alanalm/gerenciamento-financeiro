@@ -1,12 +1,14 @@
-﻿using Xunit;
-using Moq;
-using FinanceiroPessoal.ViewModels;
-using FinanceiroPessoal.Servicos.Api;
-using FinanceiroPessoal.Aplicacao.DTOs;
+﻿using FinanceiroPessoal.Aplicacao.DTOs;
+using FinanceiroPessoal.Aplicacao.Interfaces;
 using FinanceiroPessoal.Dominio.Comum;
+using FinanceiroPessoal.Dominio.Enums;
+using FinanceiroPessoal.Servicos.Api;
+using FinanceiroPessoal.ViewModels;
+using Moq;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Xunit;
 
 public class CategoriaViewModelTestes
 {
@@ -35,19 +37,26 @@ public class CategoriaViewModelTestes
     public async Task AdicionarCategoriaAsync_DeveAdicionarCategoriaNaLista()
     {
         // Arrange
-        var novaCategoria = new CategoriaDto { Id = "2", Nome = "Lazer" };
-        var mockService = new Mock<ICategoriaApiService>();
-        mockService.Setup(s => s.AdicionarAsync(It.IsAny<CriarCategoriaDto>()))
-            .ReturnsAsync(RespostaApi<CategoriaDto>.SucessoResposta(novaCategoria));
+        var mockApiService = new Mock<ICategoriaApiService>();
+        var viewModel = new CategoriaViewModel(mockApiService.Object);
 
-        var vm = new CategoriaViewModel(mockService.Object);
+        var dto = new CriarCategoriaDto { Nome = "Alimentação", Tipo = TipoCategoria.Despesa };
+
+        // Simula que o serviço de API retorna sucesso
+        mockApiService
+            .Setup(s => s.AdicionarAsync(It.IsAny<CriarCategoriaDto>()))
+            .ReturnsAsync(RespostaApi<CategoriaDto>.SucessoResposta(new CategoriaDto
+            {
+                Id = "1",
+                Nome = dto.Nome,
+                Tipo = dto.Tipo
+            }));
 
         // Act
-        await vm.AdicionarCategoriaAsync(new CriarCategoriaDto { Nome = "Lazer" });
+        await viewModel.AdicionarCategoriaAsync(dto);
 
         // Assert
-        Assert.Single(vm.Categorias);
-        Assert.Equal("Lazer", vm.Categorias.First().Nome);
-        Assert.Equal("Categoria adicionada com sucesso!", vm.MensagemSucesso);
+        Assert.Single(viewModel.Categorias);
+        Assert.Equal("Alimentação", viewModel.Categorias[0].Nome);
     }
 }

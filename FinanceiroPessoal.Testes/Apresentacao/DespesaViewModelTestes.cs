@@ -43,18 +43,20 @@ public class DespesaViewModelTestes
         var novaDespesa = new DespesaDto { Id = "2", Descricao = "Internet", Valor = 150 };
         var mockService = new Mock<IDespesaApiService>();
         mockService.Setup(s => s.AdicionarAsync(It.IsAny<CriarDespesaDto>()))
-            .ReturnsAsync(RespostaApi<DespesaDto>.SucessoResposta(novaDespesa));
+                   .ReturnsAsync(RespostaApi<DespesaDto>.SucessoResposta(novaDespesa));
 
         var vm = new DespesaViewModel(mockService.Object);
 
         // Act
-        await vm.AdicionarDespesaAsync(new CriarDespesaDto { Descricao = "Internet", Valor = 150 });
+        var resultado = await vm.AdicionarDespesaAsync(new CriarDespesaDto { Descricao = "Internet", Valor = 150 });
 
         // Assert
-        Assert.Single(vm.Despesas);
+        Assert.True(resultado.Sucesso);                
+        Assert.Single(vm.Despesas);                    
         Assert.Equal("Internet", vm.Despesas.First().Descricao);
         Assert.Equal("Despesa adicionada com sucesso!", vm.MensagemSucesso);
     }
+
 
     [Fact]
     public async Task RemoverDespesaAsync_DeveRemoverDespesaDaLista()
@@ -63,7 +65,7 @@ public class DespesaViewModelTestes
         var despesaExistente = new DespesaDto { Id = "1", Descricao = "Aluguel", Valor = 1000 };
         var mockService = new Mock<IDespesaApiService>();
         mockService.Setup(s => s.RemoverAsync("1"))
-            .ReturnsAsync(RespostaApi<bool>.SucessoResposta(true));
+            .ReturnsAsync(RespostaApi<bool>.SucessoResposta(true, "Despesa removida com sucesso!"));
 
         var vm = new DespesaViewModel(mockService.Object);
         vm.Despesas.Add(despesaExistente);

@@ -1,4 +1,5 @@
-﻿using FinanceiroPessoal.Aplicacao.DTOs;
+﻿using Blazored.LocalStorage;
+using FinanceiroPessoal.Aplicacao.DTOs;
 using FinanceiroPessoal.Apresentacao.Servicos.Api;
 using Moq;
 using Moq.Protected;
@@ -12,6 +13,7 @@ namespace SeuProjeto.Tests.Servicos
     public class DespesaApiServiceTests
     {
         private readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
+        private Mock<ILocalStorageService> localStorageMock = new ();
 
         private HttpClient CriarHttpClient(HttpStatusCode statusCode, object? dados = null, bool sucesso = true, string mensagem = "ok")
         {
@@ -66,7 +68,10 @@ namespace SeuProjeto.Tests.Servicos
             };
 
             var httpClient = CriarHttpClient(HttpStatusCode.OK, despesas);
-            var service = new DespesaApiService(httpClient);
+            localStorageMock
+            .Setup(ls => ls.GetItemAsStringAsync("authToken", It.IsAny<CancellationToken>()))
+             .ReturnsAsync("fake-jwt-token");
+            var service = new DespesaApiService(httpClient, localStorageMock.Object);
 
             var resultado = await service.ObterTodosAsync();
 
@@ -78,7 +83,7 @@ namespace SeuProjeto.Tests.Servicos
         public async Task ObterTodosAsync_DeveRetornarFalha_QuandoApiRetornarErro()
         {
             var httpClient = CriarHttpClient(HttpStatusCode.InternalServerError, null, false, "erro interno");
-            var service = new DespesaApiService(httpClient);
+            var service = new DespesaApiService(httpClient, localStorageMock.Object);
 
             var resultado = await service.ObterTodosAsync();
 
@@ -91,7 +96,7 @@ namespace SeuProjeto.Tests.Servicos
         {
             var despesa = new DespesaDto { Id = "1", Descricao = "Despesa Teste", Valor = 150 };
             var httpClient = CriarHttpClient(HttpStatusCode.OK, despesa);
-            var service = new DespesaApiService(httpClient);
+            var service = new DespesaApiService(httpClient, localStorageMock.Object);
 
             var resultado = await service.ObterPorIdAsync("1");
 
@@ -104,7 +109,7 @@ namespace SeuProjeto.Tests.Servicos
         public async Task ObterPorIdAsync_DeveRetornarFalha_QuandoNaoEncontrado()
         {
             var httpClient = CriarHttpClient(HttpStatusCode.NotFound, null, false, "não encontrado");
-            var service = new DespesaApiService(httpClient);
+            var service = new DespesaApiService(httpClient, localStorageMock.Object);
 
             var resultado = await service.ObterPorIdAsync("99");
 
@@ -120,7 +125,7 @@ namespace SeuProjeto.Tests.Servicos
             var despesaCriada = new DespesaDto { Id = "10", Descricao = "Nova Despesa", Valor = 300 };
 
             var httpClient = CriarHttpClient(HttpStatusCode.OK, despesaCriada);
-            var service = new DespesaApiService(httpClient);
+            var service = new DespesaApiService(httpClient, localStorageMock.Object);
 
             var resultado = await service.AdicionarAsync(novaDespesa);
 
@@ -134,7 +139,7 @@ namespace SeuProjeto.Tests.Servicos
         {
             var novaDespesa = new CriarDespesaDto { Descricao = "Falha", Valor = 999 };
             var httpClient = CriarHttpClient(HttpStatusCode.BadRequest, null, false, "erro ao criar");
-            var service = new DespesaApiService(httpClient);
+            var service = new DespesaApiService(httpClient, localStorageMock.Object);
 
             var resultado = await service.AdicionarAsync(novaDespesa);
 
@@ -149,7 +154,7 @@ namespace SeuProjeto.Tests.Servicos
             var despesaAtualizada = new DespesaDto { Id = "1", Descricao = "Despesa Atualizada", Valor = 500 };
 
             var httpClient = CriarHttpClient(HttpStatusCode.OK, despesaAtualizada);
-            var service = new DespesaApiService(httpClient);
+            var service = new DespesaApiService(httpClient, localStorageMock.Object);
 
             var resultado = await service.AtualizarAsync("1", atualizarDespesa);
 
@@ -162,7 +167,7 @@ namespace SeuProjeto.Tests.Servicos
         {
             var atualizarDespesa = new AtualizarDespesaDto { CategoriaId = "999", Descricao = "Inexistente", Valor = 100 };
             var httpClient = CriarHttpClient(HttpStatusCode.NotFound, null, false, "não encontrado");
-            var service = new DespesaApiService(httpClient);
+            var service = new DespesaApiService(httpClient, localStorageMock.Object);
 
             var resultado = await service.AtualizarAsync("999", atualizarDespesa);
 
@@ -175,7 +180,7 @@ namespace SeuProjeto.Tests.Servicos
         public async Task RemoverAsync_DeveRetornarSucesso_QuandoRemovido()
         {
             var httpClient = CriarHttpClient(HttpStatusCode.OK, true);
-            var service = new DespesaApiService(httpClient);
+            var service = new DespesaApiService(httpClient, localStorageMock.Object);
 
             var resultado = await service.RemoverAsync("1");
 
@@ -187,7 +192,7 @@ namespace SeuProjeto.Tests.Servicos
         public async Task RemoverAsync_DeveRetornarFalha_QuandoNaoEncontrado()
         {
             var httpClient = CriarHttpClient(HttpStatusCode.NotFound, null, false, "não encontrado");
-            var service = new DespesaApiService(httpClient);
+            var service = new DespesaApiService(httpClient, localStorageMock.Object);
 
             var resultado = await service.RemoverAsync("99");
 

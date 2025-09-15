@@ -1,13 +1,15 @@
-﻿using FinanceiroPessoal.Aplicacao.DTOs;
+﻿using Blazored.LocalStorage;
+using FinanceiroPessoal.Aplicacao.DTOs;
 using FinanceiroPessoal.Dominio.Comum;
 
 namespace FinanceiroPessoal.Servicos.Api
 {
     public class CategoriaApiService : ApiServiceBase, ICategoriaApiService
     {
-        private const string BaseUrl = "api/categorias";
+        private const string BaseUrl = "categorias";
 
-        public CategoriaApiService(HttpClient httpClient) : base(httpClient)
+        public CategoriaApiService(HttpClient httpClient, ILocalStorageService localStorage)
+            : base(httpClient, localStorage)
         {
         }
 

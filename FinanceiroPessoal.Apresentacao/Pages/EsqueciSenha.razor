@@ -1,0 +1,57 @@
+﻿@page "/esqueci-senha"
+@inject NavigationManager Nav
+
+<MudPaper Class="pa-6 mx-auto mt-12" Style="max-width:400px;" Elevation="10">
+    <MudText Typo="Typo.h5" Class="mb-4">Esqueci minha senha</MudText>
+
+    <MudTextField @bind-Value="Email" Label="Email" Required="true" Variant="Variant.Outlined" FullWidth="true" />
+
+    <MudButton Variant="Variant.Filled" Color="Color.Primary"
+               OnClick="EnviarEmail"
+               Disabled="@EstaCarregando"
+               Loading="@EstaCarregando"
+               Class="mt-4" FullWidth="true">
+        Enviar link de redefinição
+    </MudButton>
+
+    @if (!string.IsNullOrEmpty(Mensagem))
+    {
+        <MudText Color="Color.Info" Class="mt-2">@Mensagem</MudText>
+    }
+
+    <MudButton Variant="Variant.Text" Color="Color.Primary"
+               OnClick="@IrParaLogin"
+               Class="mt-2" FullWidth="true">
+        Voltar ao login
+    </MudButton>
+</MudPaper>
+
+@code {
+    private string Email { get; set; } = "";
+    private string Mensagem { get; set; } = "";
+    private bool EstaCarregando { get; set; } = false;
+
+    private async Task EnviarEmail()
+    {
+        EstaCarregando = true;
+        Mensagem = "";
+
+        try
+        {
+            // Futuramente chamar a API:
+            // await _http.PostAsJsonAsync("auth/esqueci-senha", new { Email });
+
+            await Task.Delay(1000); // simula
+            Mensagem = "Se este email estiver cadastrado, você receberá instruções de redefinição.";
+        }
+        finally
+        {
+            EstaCarregando = false;
+        }
+    }
+
+    private void IrParaLogin()
+    {
+        Nav.NavigateTo("/login");
+    }
+}

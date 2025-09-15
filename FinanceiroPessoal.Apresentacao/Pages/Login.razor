@@ -1,0 +1,83 @@
+﻿@page "/login"
+@using FinanceiroPessoal.Apresentacao.Servicos.Interfaces
+@inject IAuthService Auth
+@inject NavigationManager Nav
+
+<MudPaper Class="pa-6 mx-auto mt-12" Style="max-width:400px;" Elevation="10">
+    <MudText Typo="Typo.h5" Class="mb-4">Entrar</MudText>
+
+    <MudTextField @bind-Value="Email" Label="Email" Required="true" Variant="Variant.Outlined" FullWidth="true" />
+    <MudTextField @bind-Value="Senha" Label="Senha" InputType="InputType.Password" Required="true" Variant="Variant.Outlined" FullWidth="true" />
+
+    <MudButton Variant="Variant.Filled" Color="Color.Primary"
+               OnClick="Entrar"
+               Disabled="@EstaCarregando"
+               Loading="@EstaCarregando"
+               Class="mt-4" FullWidth="true">
+        Entrar
+    </MudButton>
+
+    @if (!string.IsNullOrEmpty(MensagemErro))
+    {
+        <MudText Color="Color.Error" Class="mt-2">@MensagemErro</MudText>
+    }
+
+    <MudButton Variant="Variant.Text" Color="Color.Primary"
+               OnClick="@IrParaEsqueciSenha"
+               Class="mt-2" FullWidth="true">
+        Esqueci minha senha
+    </MudButton>
+
+    <MudButton Variant="Variant.Text" Color="Color.Primary"
+               OnClick="@IrParaCadastro"
+               Class="mt-2" FullWidth="true">
+        Criar Conta
+    </MudButton>
+</MudPaper>
+
+@code {
+    private string Email { get; set; } = "";
+    private string Senha { get; set; } = "";
+    private string MensagemErro { get; set; } = "";
+    private bool EstaCarregando { get; set; } = false;
+
+    private void IrParaCadastro()
+    {
+        Nav.NavigateTo("/cadastro");
+    }
+
+    private void IrParaEsqueciSenha()
+    {
+        Nav.NavigateTo("/esqueci-senha");
+    }
+
+    private async Task Entrar()
+    {
+        MensagemErro = "";
+        EstaCarregando = true;
+
+        try
+        {
+            var token = await Auth.LoginAsync(Email, Senha);
+
+            if (!string.IsNullOrEmpty(token))
+            {
+                // Se logou com sucesso, volta pra Home
+                Nav.NavigateTo("/", forceLoad: true);
+            }
+            else
+            {
+                MensagemErro = "Usuário ou senha inválidos.";
+            }
+        }
+        catch (Exception ex)
+        {
+            MensagemErro = "Erro ao tentar fazer login. Verifique sua conexão.";
+            Console.Error.WriteLine(ex);
+        }
+        finally
+        {
+            EstaCarregando = false;
+        }
+    }
+}

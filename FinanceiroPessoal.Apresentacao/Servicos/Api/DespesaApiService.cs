@@ -7,9 +7,10 @@ namespace FinanceiroPessoal.Apresentacao.Servicos.Api
 {
     public class DespesaApiService : ApiServiceBase, IDespesaApiService
     {
-        private const string BaseUrl = "api/despesas";
+        private const string BaseUrl = "despesas";
 
-        public DespesaApiService(HttpClient httpClient) : base(httpClient) { }
+        public DespesaApiService(HttpClient httpClient, Blazored.LocalStorage.ILocalStorageService localStorage) 
+            : base(httpClient, localStorage) { }
 
         public Task<RespostaApi<IEnumerable<DespesaDto>>> ObterTodosAsync()
             => GetAsync<IEnumerable<DespesaDto>>(BaseUrl);

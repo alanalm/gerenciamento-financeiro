@@ -1,8 +1,10 @@
 ﻿@page "/"
 @using FinanceiroPessoal.Apresentacao.Pages.Modals
 @using FinanceiroPessoal.Apresentacao.ViewModels
+@using Microsoft.AspNetCore.Authorization
 @inject DashboardViewModel VM
 @inject ISnackbar Snackbar
+@attribute [Authorize]
 
 <MudText Typo="Typo.h4" GutterBottom="true" Class="mb-4">Dashboard Financeiro</MudText>
 

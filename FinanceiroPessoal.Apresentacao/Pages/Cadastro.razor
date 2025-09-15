@@ -1,0 +1,82 @@
+﻿@page "/cadastro"
+@using FinanceiroPessoal.Apresentacao.Servicos.Interfaces
+@inject IAuthService Auth
+@inject NavigationManager Nav
+
+<MudPaper Class="pa-6 mx-auto mt-12" Style="max-width:400px;" Elevation="10">
+    <MudText Typo="Typo.h5" Class="mb-4">Criar Conta</MudText>
+
+    <MudTextField @bind-Value="Nome" Label="Nome" Required="true" Variant="Variant.Outlined" FullWidth="true" />
+    <MudTextField @bind-Value="Email" Label="Email" Required="true" Variant="Variant.Outlined" FullWidth="true" />
+    <MudTextField @bind-Value="Senha" Label="Senha" InputType="InputType.Password" Required="true" Variant="Variant.Outlined" FullWidth="true" />
+    <MudTextField @bind-Value="ConfirmarSenha" Label="Confirmar Senha" InputType="InputType.Password" Required="true" Variant="Variant.Outlined" FullWidth="true" />
+
+    <MudButton Variant="Variant.Filled" Color="Color.Primary"
+               OnClick="Cadastrar"
+               Disabled="@EstaCarregando"
+               Loading="@EstaCarregando"
+               Class="mt-4" FullWidth="true">
+        Cadastrar
+    </MudButton>
+
+    @if (!string.IsNullOrEmpty(MensagemErro))
+    {
+        <MudText Color="Color.Error" Class="mt-2">@MensagemErro</MudText>
+    }
+
+    <MudButton Variant="Variant.Text" Color="Color.Primary"
+               OnClick="@IrParaLogin"
+               Class="mt-2" FullWidth="true">
+        Já tenho conta
+    </MudButton>
+</MudPaper>
+
+@code {
+    private string Nome { get; set; } = "";
+    private string Email { get; set; } = "";
+    private string Senha { get; set; } = "";
+    private string ConfirmarSenha { get; set; } = "";
+    private string MensagemErro { get; set; } = "";
+    private bool EstaCarregando { get; set; } = false;
+
+    private void IrParaLogin()
+    {
+        Nav.NavigateTo("/login");
+    }
+
+    private async Task Cadastrar()
+    {
+        MensagemErro = "";
+        EstaCarregando = true;
+
+        try
+        {
+            if (Senha != ConfirmarSenha)
+            {
+                MensagemErro = "As senhas não conferem.";
+                return;
+            }
+
+            var sucesso = await Auth.RegistrarAsync(Nome, Email, Senha);
+
+            if (sucesso)
+            {
+                // Redireciona para login após cadastro
+                Nav.NavigateTo("/login", forceLoad: true);
+            }
+            else
+            {
+                MensagemErro = "Não foi possível criar a conta. Tente novamente.";
+            }
+        }
+        catch (Exception ex)
+        {
+            MensagemErro = "Erro ao tentar cadastrar. Verifique sua conexão.";
+            Console.Error.WriteLine(ex);
+        }
+        finally
+        {
+            EstaCarregando = false;
+        }
+    }
+}

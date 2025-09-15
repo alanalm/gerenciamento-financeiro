@@ -1,19 +1,12 @@
-﻿using FinanceiroPessoal.Aplicacao.DTOs;
+﻿using Blazored.LocalStorage;
+using FinanceiroPessoal.Aplicacao.DTOs;
 using FinanceiroPessoal.Dominio.Comum;
 using FinanceiroPessoal.Servicos.Api;
 using Moq;
 using Moq.Protected;
-using System;
-using System.Buffers.Text;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
-using System.Net.Http;
 using System.Text;
 using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
-using Xunit;
 using Xunit.Abstractions;
 
 public class CategoriaApiServiceTestes
@@ -26,6 +19,7 @@ public class CategoriaApiServiceTestes
     private readonly HttpClient _httpClient;
 
     private readonly CategoriaApiService _service;
+    private readonly Mock<ILocalStorageService> localStorageMock = new();
 
     public CategoriaApiServiceTestes(ITestOutputHelper saida)
     {
@@ -72,7 +66,12 @@ public class CategoriaApiServiceTestes
             BaseAddress = new Uri("http://localhost/")
         };
 
-        var servico = new CategoriaApiService(httpClient);
+        //localStorageMock = new Mock<ILocalStorageService>();
+        localStorageMock
+        .Setup(ls => ls.GetItemAsStringAsync("authToken", It.IsAny<CancellationToken>()))
+        .ReturnsAsync("fake-jwt-token");
+
+        var servico = new CategoriaApiService(httpClient, localStorageMock.Object);
 
         // Act
         var resultado = await servico.ObterTodosAsync();
@@ -123,7 +122,7 @@ public class CategoriaApiServiceTestes
             BaseAddress = new Uri("http://localhost")
         };
 
-        return new CategoriaApiService(httpClient);
+        return new CategoriaApiService(httpClient, localStorageMock.Object);
     }
 
     [Fact(DisplayName = "Criar categoria deve retornar sucesso quando criada")]
@@ -195,7 +194,7 @@ public class CategoriaApiServiceTestes
             .ReturnsAsync(respostaApi);
 
         var httpClient = new HttpClient(handlerMock.Object) { BaseAddress = new Uri("http://localhost") };
-        var service = new CategoriaApiService(httpClient);
+        var service = new CategoriaApiService(httpClient, localStorageMock.Object);
 
         // Act
         var resultado = await service.ObterPorIdAsync(categoriaId);
@@ -229,7 +228,7 @@ public class CategoriaApiServiceTestes
             .ReturnsAsync(respostaApi);
 
         var httpClient = new HttpClient(handlerMock.Object) { BaseAddress = new Uri("http://localhost") };
-        var service = new CategoriaApiService(httpClient);
+        var service = new CategoriaApiService(httpClient, localStorageMock.Object);
 
         // Act
         var resultado = await service.AdicionarAsync(novaCategoria);
@@ -261,7 +260,7 @@ public class CategoriaApiServiceTestes
             .ReturnsAsync(respostaApi);
 
         var httpClient = new HttpClient(handlerMock.Object) { BaseAddress = new Uri("http://localhost") };
-        var service = new CategoriaApiService(httpClient);
+        var service = new CategoriaApiService(httpClient, localStorageMock.Object);
 
         // Act
         var resultado = await service.AtualizarAsync(categoriaId, atualizarDto);
@@ -295,7 +294,7 @@ public class CategoriaApiServiceTestes
             .ReturnsAsync(respostaApi);
 
         var httpClient = new HttpClient(handlerMock.Object) { BaseAddress = new Uri("http://localhost") };
-        var service = new CategoriaApiService(httpClient);
+        var service = new CategoriaApiService(httpClient, localStorageMock.Object);
 
         // Act
         var resultado = await service.RemoverAsync(categoriaId);

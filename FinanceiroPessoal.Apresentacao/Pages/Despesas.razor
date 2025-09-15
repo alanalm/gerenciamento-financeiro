@@ -2,13 +2,18 @@
 @using FinanceiroPessoal.Aplicacao.DTOs
 @using FinanceiroPessoal.Apresentacao.ViewModels
 @using FinanceiroPessoal.ViewModels
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
 @inject DespesaViewModel DespesaVM
 @inject CategoriaViewModel CategoriaVM
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
+@attribute [Authorize]
 
 <PageTitle>Despesas</PageTitle>
 
+<AuthorizeView>
+    <Authorized>
 <MudText Typo="Typo.h4" GutterBottom="true">Gerenciar Despesas</MudText>
 
 <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => AbrirModalAdicionar())">
@@ -30,17 +35,17 @@
         <MudTh>Categoria</MudTh>
         <MudTh></MudTh>
     </HeaderContent>
-    <RowTemplate>
-        <MudTd>@context.Descricao</MudTd>
-        <MudTd>@context.Valor.ToString("C")</MudTd>
-        <MudTd>@context.Data</MudTd>
-        <MudTd>@CategoriaVM.Categorias.FirstOrDefault(c => c.Id == context.CategoriaId)?.Nome</MudTd>
+            <RowTemplate Context="despesas">
+                <MudTd>@despesas.Descricao</MudTd>
+                <MudTd>@despesas.Valor.ToString("C")</MudTd>
+                <MudTd>@despesas.Data</MudTd>
+                <MudTd>@CategoriaVM.Categorias.FirstOrDefault(c => c.Id == despesas.CategoriaId)?.Nome</MudTd>
         <MudTd>
             <MudIconButton Icon="@Icons.Material.Filled.Edit"
-                           OnClick="@(() => AbrirModalEditar(context))"
+                                   OnClick="@(() => AbrirModalEditar(despesas))"
                            Color="Color.Primary" />
             <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                           OnClick="@(() => RemoverDespesa(context))"
+                                   OnClick="@(() => RemoverDespesa(despesas))"
                            Color="Color.Error" />
         </MudTd>
     </RowTemplate>
@@ -48,6 +53,11 @@
         <MudTablePager />
     </PagerContent>
 </MudTable>
+</Authorized>
+     <NotAuthorized>
+        <MudText Typo="Typo.h6" Color="Color.Error">Você não tem permissão para acessar esta página.</MudText>
+    </NotAuthorized>
+</AuthorizeView>
 
 @code {
     public string Filtro { get; set; } = string.Empty;

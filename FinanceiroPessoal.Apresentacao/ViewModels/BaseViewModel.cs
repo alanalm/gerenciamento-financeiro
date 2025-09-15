@@ -1,10 +1,7 @@
 ﻿using FinanceiroPessoal.Dominio.Comum;
 using FluentValidation;
-using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace FinanceiroPessoal.ViewModels
 {
@@ -78,7 +75,7 @@ namespace FinanceiroPessoal.ViewModels
             }
             catch (Exception ex)
             {
-                MensagemErro = ex.Message; // aqui você pode depois trocar para algo mais amigável
+                MensagemErro = ex.Message; // depois trocar para algo mais amigável
             }
             finally
             {

@@ -2,25 +2,34 @@
 using FinanceiroPessoal.Aplicacao.Interfaces;
 using FinanceiroPessoal.Aplicacao.Servicos;
 using FinanceiroPessoal.Dominio.Comum;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace FinanceiroPessoal.API.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class DespesasController : ControllerBase
     {
         private readonly IDespesaServico _despesaServico;
-        private readonly Guid usuarioTeste = Guid.Parse("11111111-1111-1111-1111-111111111111");
 
         public DespesasController(IDespesaServico despesaServico)
         {
             _despesaServico = despesaServico;
         }
 
-        // Simulação de UsuarioId, em um cenário real pegar do JWT
-        private Guid GetUsuarioId() => usuarioTeste;
-        //var usuarioId = User.Claims.First(c => c.Type == "sub").Value;
+        // Obtém o ID do usuário autenticado a partir dos claims
+        private Guid GetUsuarioId()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim))
+                throw new UnauthorizedAccessException("Usuário não autenticado ou claim de identificação ausente.");
+
+            return Guid.Parse(userIdClaim);
+        }
 
         [HttpPost]
         public async Task<ActionResult<RespostaApi<DespesaDto>>> Post([FromBody] CriarDespesaDto despesaDto)
