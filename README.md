@@ -107,7 +107,7 @@ e fornece botão para Sair.
 # Próximos passos / melhorias
 Recuperação de senha via e-mail
 
-Gráficos e dashboards de receitas vs despesas
+Gráficos de receitas vs despesas melhores
 
 Exportação de relatórios em PDF ou Excel
 
