@@ -9,18 +9,23 @@
 @inject ILocalStorageService LocalStorage
 
 <CascadingAuthenticationState>
-    <MudThemeProvider />
+    <MudThemeProvider @bind-IsDarkMode="_isDarkMode" Theme="_currentTheme" />
     <MudPopoverProvider />
+    <MudSnackbarProvider />
 
     <MudLayout>
-        <MudAppBar Elevation="1">
-            <MudIconButton Icon="@Icons.Material.Filled.Menu" 
-                           Color="Color.Inherit" 
-                           Edge="Edge.Start" 
+        <MudAppBar Elevation="1" Color="Color.Primary">
+            <MudIconButton Icon="@Icons.Material.Filled.Menu"
+                           Color="Color.Inherit"
+                           Edge="Edge.Start"
                            OnClick="@((e) => DrawerToggle())" />
             <MudSpacer />
             <MudText Typo="Typo.h5" Class="ml-4">Financeiro Pessoal</MudText>
             <MudSpacer />
+
+            <MudIconButton Icon="@(_isDarkMode? Icons.Material.Filled.DarkMode : Icons.Material.Filled.LightMode)"
+                           OnClick="ToggleTheme"
+                           Color="Color.Inherit" />
 
             @if (IsAuthenticated)
             {
@@ -29,10 +34,9 @@
                     Sair
                 </MudButton>
             }
-
         </MudAppBar>
 
-        <MudDrawer @bind-Open="_drawerOpen" Elevation="1">
+        <MudDrawer @bind-Open="_drawerOpen" Elevation="1" Color="Color.Surface">
             <MudDrawerHeader>
                 <MudText Typo="Typo.h6">Navegação</MudText>
             </MudDrawerHeader>
@@ -52,7 +56,33 @@
     bool IsAuthenticated = false;
     private string? NomeUsuario;
 
-    [CascadingParameter] 
+    private bool _isDarkMode = false;
+
+    private MudTheme _currentTheme = new MudTheme()
+    {
+        PaletteLight = new PaletteLight()
+        {
+            Primary = "#1976d2",   
+            Secondary = "#9c27b0", 
+            Background = "#f5f5f5",
+            AppbarBackground = "#1976d2",
+            DrawerBackground = "#ffffff"
+        },
+        PaletteDark = new PaletteDark()
+        {
+            Primary = "#90caf9",
+            Secondary = "#ce93d8",
+            Background = "#121212", 
+            Surface = "#2c2c2c",    
+            AppbarBackground = "#1f1f1f",
+            DrawerBackground = "#1f1f1f",
+            TextPrimary = "#f5f5f5",   
+            TextSecondary = "#cfcfcf", 
+            PrimaryContrastText = "#000000"
+        }
+    };
+
+    [CascadingParameter]
     private Task<AuthenticationState> AuthStateTask { get; set; } = default!;
 
     protected override async Task OnParametersSetAsync()
@@ -64,22 +94,23 @@
 
         if (IsAuthenticated)
         {
-            // Pega direto da claim padrão "name" do JWT
             NomeUsuario = user.Identity?.Name
                           ?? user.FindFirst("name")?.Value
                           ?? user.FindFirst("unique_name")?.Value;
         }
     }
 
-    void DrawerToggle()
-    {
-        _drawerOpen = !_drawerOpen;
-    }
+    void DrawerToggle() => _drawerOpen = !_drawerOpen;
 
     private async Task Logout()
     {
         await Auth.LogoutAsync();
         Snackbar.Add("Você saiu com sucesso!", Severity.Info);
         Nav.NavigateTo("/login", true);
+    }
+
+    private void ToggleTheme()
+    {
+        _isDarkMode = !_isDarkMode;
     }
 }
